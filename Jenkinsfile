@@ -13,9 +13,11 @@ pipeline {
                 git branch: 'develop', url:'https://github.com/Sahildyno/CRM.git'
             }
         }
+
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $ECR_REPO:$IMAGE_TAG .'
+                
+                sh 'docker build -t $my-app-repo:$latest .'
             }
         }
         stage('Push to AWS ECR') {
