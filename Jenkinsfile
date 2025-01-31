@@ -17,22 +17,22 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 
-                sh 'docker build -t my-app-repo:latest docker/'
+                sh 'docker build -t  $ECR_REPO:$IMAGE_TAG /docker/docker-compose.yml'
             }
         }
         stage('Push to AWS ECR') {
             steps {
                 withAWS(region: "$AWS_REGION", credentials: 'aws-jenkins') {
                     sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO'
-                    sh 'docker tag  my-app-repo:latest  my-app-repo:latest'
-                    sh 'docker push  my-app-repo:latest'
+                    sh 'docker tag  $ECR_REPO:$IMAGE_TAG  $ECR_REPO:$IMAGE_TAG'
+                    sh 'docker push  $ECR_REPO:$IMAGE_TAG'
                 }
             }
         }
         stage('Deploy to EC2') {
             steps {
                 sshagent(['ec2-key']) {
-                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@13.127.4.159 "docker pull  my-app-repo:latest && docker run -d -p 80:80  my-app-repo:latest"'
+                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@13.127.4.159 "docker pull  $ECR_REPO:$IMAGE_TAG && docker run -d -p 80:80  $ECR_REPO:$IMAGE_TAG"'
                 }
             }
         }
