@@ -17,7 +17,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 
-                sh 'docker build -t $my-app-repo:$latest .'
+                sh 'docker build -t my-app-repo:latest .'
             }
         }
         stage('Push to AWS ECR') {
