@@ -17,7 +17,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 
-                sh 'docker build -t  $ECR_REPO:$IMAGE_TAG /docker/'
+                sh 'docker build -t  $ECR_REPO:$IMAGE_TAG docker/'
             }
         }
         stage('Push to AWS ECR') {
