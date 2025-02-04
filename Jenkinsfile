@@ -15,11 +15,15 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                
-                sh 'docker build -t  $ECR_REPO:$IMAGE_TAG docker .'
-            }
+    steps {
+        script {
+            // Make sure the Dockerfile path is correct
+            sh 'docker buildx create --use'  // Create and use Buildx builder
+            sh 'docker buildx build -t $ECR_REPO:$IMAGE_TAG . --push'  // Use correct context path
         }
+    }
+}
+
         stage('Push to AWS ECR') {
             steps {
                 withAWS(region: "$AWS_REGION", credentials: 'aws-jenkins') {
