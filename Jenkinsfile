@@ -1,44 +1,74 @@
 pipeline {
     agent any
-    
+
     environment {
-        AWS_REGION = 'ap-south-1'
-        ECR_REPO = '686255956220.dkr.ecr.ap-south-1.amazonaws.com/my-app-repo'
-        IMAGE_TAG = "latest"
+        // Define environment variables if needed
+        JAVA_HOME = "/usr/lib/jvm/java-11-openjdk-amd64"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'develop', url:'https://github.com/Sahildyno/CRM.git'
+                git branch: 'main', url: 'https://github.com/Sahildyno/CRM.git'
             }
         }
 
-        stage('Build Docker Image') {
-    steps {
-        script {
-            // Make sure the Dockerfile path is correct
-            sh 'docker buildx create --use'  // Create and use Buildx builder
-            sh 'docker buildx build -t $ECR_REPO:$IMAGE_TAG . --push'  // Use correct context path
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    if (fileExists('pom.xml')) {
+                        sh 'mvn clean install'
+                    } else if (fileExists('package.json')) {
+                        sh 'npm install'
+                    } else if (fileExists('requirements.txt')) {
+                        sh 'pip install -r requirements.txt'
+                    } else {
+                        error "No recognized dependency file found!"
+                    }
+                }
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                script {
+                    if (fileExists('pom.xml')) {
+                        sh 'mvn package'
+                    } else if (fileExists('package.json')) {
+                        sh 'npm run build'
+                    }
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    if (fileExists('pom.xml')) {
+                        sh 'mvn test'
+                    } else if (fileExists('package.json')) {
+                        sh 'npm test'
+                    } else if (fileExists('pytest.ini')) {
+                        sh 'pytest'
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying application...'
+                // Add deployment steps (e.g., Docker, Kubernetes, SCP, AWS)
+            }
         }
     }
-}
 
-        stage('Push to AWS ECR') {
-            steps {
-                withAWS(region: "$AWS_REGION", credentials: 'aws-jenkins') {
-                    sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO'
-                    sh 'docker tag  $ECR_REPO:$IMAGE_TAG  $ECR_REPO:$IMAGE_TAG'
-                    sh 'docker push  $ECR_REPO:$IMAGE_TAG'
-                }
-            }
+    post {
+        success {
+            echo 'Build and deployment successful!'
         }
-        stage('Deploy to EC2') {
-            steps {
-                sshagent(['ec2-key']) {
-                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@13.127.4.159 "docker pull  $ECR_REPO:$IMAGE_TAG && docker run -d -p 80:80  $ECR_REPO:$IMAGE_TAG"'
-                }
-            }
+        failure {
+            echo 'Build failed!'
         }
     }
 }
