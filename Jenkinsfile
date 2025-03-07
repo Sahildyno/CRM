@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Define environment variables if needed
         JAVA_HOME = "/usr/lib/jvm/java-11-openjdk-amd64"
     }
 
@@ -19,7 +18,15 @@ pipeline {
                     if (fileExists('pom.xml')) {
                         sh 'mvn clean install'
                     } else if (fileExists('package.json')) {
-                        sh 'npm install'
+                        sh '''
+                        if ! command -v npm &> /dev/null
+                        then
+                            echo "npm not found. Installing Node.js and npm..."
+                            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                            sudo apt-get install -y nodejs
+                        fi
+                        npm install
+                        '''
                     } else if (fileExists('requirements.txt')) {
                         sh 'pip install -r requirements.txt'
                     } else {
