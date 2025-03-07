@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Sahildyno/CRM.git'
+                git branch: 'develop', url: 'https://github.com/Sahildyno/CRM.git'
             }
         }
 
